@@ -1,29 +1,32 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3-alpine'
-            args '-v /root/.m2:/root/.m2'
-        }
-    }
+    agent any
     stages {
-        stage('Build') {
+        stage('git repo & clean') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                // bat "rmdir  /s /q jenkins_pipeline"
+                // bat "git clone https://github.com/swathi0804/jenkins_pipeline.git"
+                bat "mvn clean -f jenkins_pipeline"
             }
         }
-        stage('Test') {
+        stage('install') {
             steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
+                bat "mvn install -f jenkins_pipeline"
             }
         }
-        stage('Deliver') {
+        stage('test') {
             steps {
-                sh './jenkins/scripts/deliver.sh'
+                bat "mvn test -f jenkins_pipeline"
+            }
+        }
+        stage('package') {
+            steps {
+                bat "mvn package -f jenkins_pipeline"
+            }
+        }
+        stage ('helm build'){
+            steps {
+                // bat "helm repo update"
+                bat "helm install -f --generate-name jenkins_pipeline/sample"
             }
         }
     }
